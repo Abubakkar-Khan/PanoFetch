@@ -28,18 +28,20 @@ export async function extractPanoInfo(url: string): Promise<PanoInfo | null> {
       }
     }
 
-    // Try to extract lh3 URL from the provided URL (url decoded or not)
+    // Try to extract lh3Url from the provided URL
     const decodedUrl = decodeURIComponent(url);
-    const lh3Match = decodedUrl.match(/(https:\/\/lh3\.googleusercontent\.com\/[^=]+)/);
-    if (lh3Match && lh3Match[1]) {
+    const lh3Regex = /(https:\/\/lh[0-9]?\.googleusercontent\.com\/[^=&\?"\\]+)/;
+    
+    const lh3Match = decodedUrl.match(lh3Regex);
+    if (lh3Match) {
       lh3Url = lh3Match[1];
     }
 
-    if (panoId) {
+    if (panoId && lh3Url) {
       return { panoId, lh3Url };
     }
 
-    // If not found in original URL (e.g. short link), fetch to follow redirects
+    // If not found in original URL (e.g. short link) or missing lh3Url, fetch to follow redirects
     const response = await axios.get(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -50,9 +52,11 @@ export async function extractPanoInfo(url: string): Promise<PanoInfo | null> {
     const html = response.data;
 
     // Look for pano ID in the final resolved URL.
-    const urlMatch = finalUrl.match(/!1s([^!&?]+)/);
-    if (urlMatch && urlMatch[1] && urlMatch[1].length >= 22) {
-      panoId = urlMatch[1];
+    if (!panoId) {
+      const urlMatch = finalUrl.match(/!1s([^!&?]+)/);
+      if (urlMatch && urlMatch[1] && urlMatch[1].length >= 22) {
+        panoId = urlMatch[1];
+      }
     }
 
     if (!panoId) {
@@ -69,10 +73,19 @@ export async function extractPanoInfo(url: string): Promise<PanoInfo | null> {
       }
     }
 
-    const decodedFinalUrl = decodeURIComponent(finalUrl);
-    const finalLh3Match = decodedFinalUrl.match(/(https:\/\/lh3\.googleusercontent\.com\/[^=]+)/);
-    if (finalLh3Match && finalLh3Match[1]) {
-      lh3Url = finalLh3Match[1];
+    if (!lh3Url) {
+      const decodedFinalUrl = decodeURIComponent(finalUrl);
+      const finalLh3Match = decodedFinalUrl.match(lh3Regex);
+      if (finalLh3Match) {
+        lh3Url = finalLh3Match[1];
+      }
+    }
+    
+    if (!lh3Url) {
+      const htmlLh3Match = html.match(lh3Regex);
+      if (htmlLh3Match) {
+        lh3Url = htmlLh3Match[1];
+      }
     }
 
     if (panoId) {
