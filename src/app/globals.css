@@ -15,6 +15,11 @@ body {
 }
 
 ::selection {
-  background: #ffffff;
-  color: #000000;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+::-moz-selection {
+  background: #ffffff !important;
+  color: #000000 !important;
 }
