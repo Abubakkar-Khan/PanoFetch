@@ -48,12 +48,12 @@ export default function Home() {
       <header className="w-full border-b border-neutral-900 bg-black/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="font-semibold text-lg tracking-tight flex items-center gap-2">
-            <div className="w-5 h-5 bg-white rounded-sm"></div>
+            <div className="w-5 h-5 bg-white rounded-sm flex items-center justify-center text-black font-black text-xs leading-none">✦</div>
             PanoFetch
           </div>
           <nav className="hidden md:flex gap-6 text-sm text-neutral-400">
-            <a href="#" className="hover:text-white transition-colors">Documentation</a>
-            <a href="#" className="hover:text-white transition-colors">GitHub</a>
+            <a href="/docs" className="hover:text-white transition-colors">Documentation</a>
+            <a href="https://github.com/Abubakkar-Khan/PanoFetch" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
           </nav>
         </div>
       </header>

@@ -67,9 +67,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: "Failed to download panorama tiles. It might not be available at this resolution." }, { status: 404 });
       }
 
-      imageBuffer = await stitchTiles(tiles, zoom);
-      width = Math.pow(2, zoom) * 512;
-      height = Math.pow(2, zoom - 1) * 512;
+      const stitched = await stitchTiles(tiles, zoom);
+      imageBuffer = stitched.buffer;
+      width = stitched.width;
+      height = stitched.height;
     }
 
     // 4. Save to local disk temporarily
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
 
     // Generate safe filename
     const hash = crypto.createHash("md5").update(panoId + Date.now()).digest("hex").substring(0, 8);
-    const filename = `pano-${panoId}-${hash}.jpg`;
+    const filename = `PanoFetch-${panoId}-${hash}.jpg`;
     const filePath = path.join(publicDownloadsDir, filename);
 
     await fs.writeFile(filePath, imageBuffer);
