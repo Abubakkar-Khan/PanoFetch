@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
+import sharp from "sharp";
 import crypto from "crypto";
 import axios from "axios";
 import { extractPanoInfo } from "@/lib/extractPano";
@@ -41,7 +42,18 @@ export async function POST(req: Request) {
     if (lh3Url) {
       try {
         const res = await axios.get(`${lh3Url}=w8192-h4096-k-no`, { responseType: "arraybuffer", timeout: 15000 });
-        imageBuffer = Buffer.from(res.data);
+        let buffer = Buffer.from(res.data);
+        
+        // Trim any black padding from user-uploaded images that aren't full 360
+        buffer = await sharp(buffer)
+          .trim({ background: '#000000', threshold: 15 })
+          .jpeg({ quality: 90 })
+          .toBuffer();
+          
+        const metadata = await sharp(buffer).metadata();
+        imageBuffer = buffer;
+        width = metadata.width || width;
+        height = metadata.height || height;
       } catch (err) {
         console.warn("Failed to download full flat image, falling back to tiles:", err);
       }

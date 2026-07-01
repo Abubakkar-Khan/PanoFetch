@@ -8,22 +8,21 @@ export async function stitchTiles(tiles: Tile[], zoom: number = 4): Promise<{buf
 
   const TILE_SIZE = 512;
   
-  // Calculate actual dimensions based on max tile coordinates
+  // Always anchor at 0,0 for standard spherical panoramas
   const maxX = Math.max(...tiles.map(t => t.x));
   const maxY = Math.max(...tiles.map(t => t.y));
   
   const width = (maxX + 1) * TILE_SIZE;
   const height = (maxY + 1) * TILE_SIZE;
 
-  // Create composite operations for sharp
   const compositeOperations = tiles.map(tile => ({
     input: tile.buffer,
     top: tile.y * TILE_SIZE,
     left: tile.x * TILE_SIZE,
   }));
 
-  // Create a blank image and composite tiles onto it
-  const buffer = await sharp({
+  // Create intermediate raw buffer and extract precise channel info to prevent glitching
+  const { data: rawBuffer, info } = await sharp({
     create: {
       width,
       height,
@@ -32,8 +31,26 @@ export async function stitchTiles(tiles: Tile[], zoom: number = 4): Promise<{buf
     }
   })
     .composite(compositeOperations)
-    .jpeg({ quality: 90 }) // Optimize for size and quality
-    .toBuffer();
+    .raw()
+    .toBuffer({ resolveWithObject: true });
 
-  return { buffer, width, height };
+  // Apply a safe trim using exact channel mapping to avoid byte-skew
+  const finalBuffer = await sharp(rawBuffer, { 
+    raw: { 
+      width: info.width, 
+      height: info.height, 
+      channels: info.channels 
+    } 
+  })
+    .trim({ background: '#000000', threshold: 15 })
+    .jpeg({ quality: 90 })
+    .toBuffer();
+    
+  const metadata = await sharp(finalBuffer).metadata();
+
+  return { 
+    buffer: finalBuffer, 
+    width: metadata.width || width, 
+    height: metadata.height || height 
+  };
 }

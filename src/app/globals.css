@@ -18,8 +18,3 @@ body {
   background: #ffffff;
   color: #000000;
 }
-
-::selection {
-  background-color: var(--foreground);
-  color: var(--background);
-}
